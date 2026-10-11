@@ -1,0 +1,13 @@
+# Environnement virtuel Python
+venv/
+__pycache__/
+
+# Fichiers de données locaux (pour ne pas saturer GitHub)
+*.csv
+*.json
+*.parquet
+data/
+
+# Variables d'environnement et secrets
+.env
+standalone_admin_password.txt

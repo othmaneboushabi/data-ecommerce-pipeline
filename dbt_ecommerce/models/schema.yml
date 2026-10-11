@@ -1,0 +1,61 @@
+version: 2
+
+models:
+  # --- TESTS SUR LES DIMENSIONS ---
+  - name: dim_clients
+    description: "Table de dimension des clients"
+    columns:
+      - name: id_client
+        description: "Clé primaire du client"
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_produits
+    description: "Table de dimension des produits"
+    columns:
+      - name: id_produit
+        description: "Clé primaire du produit"
+        tests:
+          - unique
+          - not_null
+
+  # --- TESTS SUR LES FAITS ---
+  - name: fact_sales
+    description: "Table de faits des ventes"
+    columns:
+      - name: id_detail
+        description: "Clé primaire de la ligne de vente"
+        tests:
+          - unique
+          - not_null
+      - name: id_produit
+        description: "Clé étrangère vers la dimension produit"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_produits')
+              field: id_produit
+      - name: id_client
+        description: "Clé étrangère vers la dimension client"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_clients')
+              field: id_client
+
+  - name: fact_stocks
+    description: "Table de faits des mouvements de stock"
+    columns:
+      - name: id_stock
+        description: "Clé primaire du stock"
+        tests:
+          - unique
+          - not_null
+      - name: id_produit
+        description: "Clé étrangère vers la dimension produit"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_produits')
+              field: id_produit

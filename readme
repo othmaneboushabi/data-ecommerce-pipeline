@@ -1,0 +1,128 @@
+# 🛒 E-Commerce Data Engineering Platform - Medallion Architecture
+
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Apache Airflow](https://img.shields.io/badge/Airflow-017CEE?style=for-the-badge&logo=Apache%20Airflow&logoColor=white)
+![dbt](https://img.shields.io/badge/dbt-FF694B?style=for-the-badge&logo=dbt&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![Power BI](https://img.shields.io/badge/PowerBI-F2C811?style=for-the-badge&logo=Power%20BI&logoColor=black)
+
+## 📌 Présentation du Projet
+Ce projet personnel est une plateforme complète de **Data Engineering** (Batch Processing) conçue pour l'analyse des ventes et la gestion des stocks d'une entreprise e-commerce fictive. 
+
+L'objectif est d'automatiser l'extraction, le nettoyage, la transformation et l'orchestration des données en appliquant les standards de l'industrie, notamment l'**Architecture Medallion**.
+
+## 🏗️ Architecture des Données (Flux Interactif)
+
+```mermaid
+graph TD
+    subgraph "Sources"
+        API[Fichiers & APIs]
+    end
+
+    subgraph "Data Lake & Data Warehouse (Docker)"
+        B[(MinIO : Couche Bronze)]
+        S[(PostgreSQL : Couche Silver)]
+        G[(PostgreSQL : Couche Gold)]
+    end
+
+    subgraph "Consommation"
+        BI[📊 Dashboards Power BI]
+    end
+
+    API -- "Ingestion (Python)" --> B
+    B -- "Nettoyage (Pandas)" --> S
+    S -- "Modélisation en Étoile (dbt)" --> G
+    G -- "Import Direct" --> BI
+
+    %% Orchestration
+    Airflow((Apache Airflow)) -. "Orchestre le pipeline" .-> B
+    Airflow -. "Orchestre le pipeline" .-> S
+    Airflow -. "Orchestre le pipeline" .-> G
+
+    classDef storage fill:#f9f9f9,stroke:#333,stroke-width:2px;
+    class B,S,G storage;
+    ⚙️ Les Couches de l'Architecture (Medallion)
+Couche Bronze (Données Brutes) - MinIO
+
+Ingestion des données sources via des scripts Python.
+
+Stockage local de type "Data Lake" orienté objet grâce à MinIO (compatible Amazon S3).
+
+Couche Silver (Données Nettoyées) - PostgreSQL & Pandas
+
+Nettoyage, dédoublonnage et harmonisation des données avec Pandas.
+
+Chargement des données propres dans une base de données PostgreSQL.
+
+Couche Gold (Modélisation Décisionnelle) - dbt (data build tool)
+
+Transformation des données Silver en un Modèle en Étoile (Star Schema) avec dbt.
+
+Génération automatisée des tables de Dimensions (dim_clients, dim_produits) et de Faits (fact_sales, fact_stocks).
+
+Implémentation de tests de qualité des données (unicité, intégrité référentielle, valeurs non nulles).
+
+Orchestration - Apache Airflow
+
+Automatisation du pipeline (Ingestion -> Traitement -> Modélisation -> Tests de qualité) via un DAG Airflow.
+
+📂 Structure du Répertoire
+Plaintext
+📦 data-ecommerce
+ ┣ 📂 dags/                   # DAGs Apache Airflow (ecommerce_pipeline.py)
+ ┣ 📂 dbt_ecommerce/          # Projet dbt pour la couche Gold
+ ┃ ┣ 📂 models/
+ ┃ ┃ ┣ 📂 dimensions/         # Requêtes SQL : dim_clients, dim_produits
+ ┃ ┃ ┣ 📂 facts/              # Requêtes SQL : fact_sales, fact_stocks
+ ┃ ┃ ┣ sources.yml            # Déclaration des sources Silver
+ ┃ ┃ ┗ schema.yml             # Tests de qualité de données (Quality Checks)
+ ┃ ┣ dbt_project.yml          # Configuration principale du projet dbt
+ ┃ ┗ profiles.yml             # Identifiants de connexion dbt -> PostgreSQL
+ ┣ 📂 scripts/                # Scripts Python (ETL)
+ ┃ ┣ ingestion_bronze.py      # Ingestion des données vers MinIO
+ ┃ ┗ silver_layer.py          # Nettoyage et chargement dans PostgreSQL
+ ┣ docker-compose.yml         # Infrastructure globale (MinIO, Postgres, Airflow)
+ ┣ Dockerfile                 # Image personnalisée Airflow (avec Pandas et dbt)
+ ┣ requirements.txt           # Dépendances Python
+ ┗ README.md                  # Documentation du projet
+🚀 Guide de Déploiement Local
+1. Prérequis
+Docker Desktop
+
+Git
+
+2. Déploiement de l'Infrastructure
+Clonez le dépôt et lancez les conteneurs :
+
+Bash
+git clone [https://github.com/votre-nom-utilisateur/data-ecommerce.git](https://github.com/votre-nom-utilisateur/data-ecommerce.git)
+cd data-ecommerce
+docker-compose up -d --build
+MinIO (Console) : http://localhost:9001 (admin / password123)
+
+PostgreSQL : Port 5444 (postgres / postgres)
+
+Apache Airflow : http://localhost:8080
+
+3. Lancer l'Orchestration (Airflow)
+Récupérez le mot de passe d'administration d'Airflow :
+
+Bash
+docker exec -it pfe_airflow cat standalone_admin_password.txt
+Ouvrez http://localhost:8080 et connectez-vous avec le compte admin.
+
+Activez le DAG nommé pfe_ecommerce_medallion et cliquez sur Trigger DAG.
+
+📊 Visualisation (Power BI)
+(Ajoutez ici une image ou un GIF de votre tableau de bord final)
+![Aperçu du Dashboard](./images/dashboard_preview.gif)
+
+La couche Gold est structurée pour optimiser les performances de reporting :
+
+Tables de Faits : fact_sales (Transactions), fact_stocks (Inventaire).
+
+Tables de Dimensions : dim_clients (Données clients), dim_produits (Catalogue).
+
+👨‍💻 Auteur
+Othmane Boushabi | Data Engineer

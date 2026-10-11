@@ -1,0 +1,12 @@
+dbt_ecommerce:
+  outputs:
+    dev:
+      type: postgres
+      threads: 1
+      host: postgres
+      port: 5432
+      user: postgres
+      pass: postgres
+      dbname: ecommerce_db
+      schema: gold
+  target: dev

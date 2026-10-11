@@ -1,0 +1,2 @@
+minio
+dbt-postgres==1.7.0

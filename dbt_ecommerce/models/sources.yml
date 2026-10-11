@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: silver
+    database: ecommerce_db
+    schema: public
+    tables:
+      - name: silver_clients
+      - name: silver_produits
+      - name: silver_commandes
+      - name: silver_details_commandes
+      - name: silver_stocks

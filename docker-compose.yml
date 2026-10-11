@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: pfe_minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=password123
+    command: server /data --console-address ":9001"
+    volumes:
+      - ./docker/minio_data:/data
+
+  postgres:
+    image: postgres:15
+    container_name: pfe_postgres
+    ports:
+    - "5444:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=ecommerce_db
+    volumes:
+      - ./docker/postgres_data:/var/lib/postgresql/data
+      # --- NOUVEAU SERVICE AIRFLOW ---
+  airflow:
+    build: .  # Demande à Docker de lire notre Dockerfile
+    container_name: pfe_airflow
+    ports:
+      - "8080:8080" # L'interface web d'Airflow
+    volumes:
+      - ./dags:/opt/airflow/dags                  # Dossier des pipelines
+      - ./scripts:/opt/airflow/scripts            # Dossier de vos scripts Python
+      - ./dbt_ecommerce:/opt/airflow/dbt_ecommerce # Dossier du projet dbt
+    environment:
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False # Désactive les DAGs de démo
+    command: standalone
+    depends_on:
+      - postgres
+      - minio
