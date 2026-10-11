@@ -116,8 +116,7 @@ Activez le DAG nommé pfe_ecommerce_medallion et cliquez sur Trigger DAG.
 
 📊 Visualisation (Power BI)
 (Ajoutez ici une image ou un GIF de votre tableau de bord final)
-![Aperçu du Dashboard](./images/dashboard_preview.gif)
-
+![Aperçu du Dashboard](./images/dashboard.png)
 La couche Gold est structurée pour optimiser les performances de reporting :
 
 Tables de Faits : fact_sales (Transactions), fact_stocks (Inventaire).
