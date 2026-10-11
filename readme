@@ -1,127 +1,283 @@
-# 🛒 E-Commerce Data Engineering Platform - Medallion Architecture
+# 🛒 E-Commerce Data Engineering Platform
+
+### Medallion Architecture · ETL/ELT · Data Warehouse · Business Intelligence
 
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![Apache Airflow](https://img.shields.io/badge/Airflow-017CEE?style=for-the-badge&logo=Apache%20Airflow&logoColor=white)
+![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-017CEE?style=for-the-badge&logo=apacheairflow&logoColor=white)
 ![dbt](https://img.shields.io/badge/dbt-FF694B?style=for-the-badge&logo=dbt&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
-![Power BI](https://img.shields.io/badge/PowerBI-F2C811?style=for-the-badge&logo=Power%20BI&logoColor=black)
+![MinIO](https://img.shields.io/badge/MinIO-C72E49?style=for-the-badge&logo=minio&logoColor=white)
+![Power BI](https://img.shields.io/badge/Power%20BI-F2C811?style=for-the-badge&logo=powerbi&logoColor=black)
 
-## 📌 Présentation du Projet
-Ce projet personnel est une plateforme complète de **Data Engineering** (Batch Processing) conçue pour l'analyse des ventes et la gestion des stocks d'une entreprise e-commerce fictive. 
+## 📌 Présentation du projet
 
-L'objectif est d'automatiser l'extraction, le nettoyage, la transformation et l'orchestration des données en appliquant les standards de l'industrie, notamment l'**Architecture Medallion**.
+Cette plateforme de **Data Engineering** simule une infrastructure de données pour une entreprise e-commerce. Elle permet d'automatiser l'ingestion, le nettoyage, la transformation et la préparation des données pour l'analyse des ventes et le suivi des stocks.
 
-## 🏗️ Architecture des Données (Flux Interactif)
+Le projet repose sur l'**architecture Medallion (Bronze, Silver, Gold)** et utilise Docker pour l'environnement, Apache Airflow pour l'orchestration, Pandas pour le traitement et dbt pour la modélisation analytique.
+
+### 🎯 Objectifs
+
+- Automatiser un pipeline de données de bout en bout.
+- Séparer les données brutes, nettoyées et prêtes pour l'analyse.
+- Construire un Data Warehouse basé sur un modèle en étoile.
+- Contrôler la qualité et la cohérence des données.
+- Préparer les données pour la création de dashboards interactifs dans Power BI.
+
+## 🏗️ Architecture des données
+
+Le diagramme ci-dessous représente le flux de données de la plateforme.
 
 ```mermaid
-graph TD
-    subgraph "Sources"
-        API[Fichiers & APIs]
+flowchart TD
+    A["Sources de données<br/>Fichiers et APIs"]
+
+    subgraph BRONZE["🥉 Bronze — Data Lake"]
+        B["Python : ingestion"]
+        C[("MinIO<br/>Données brutes")]
+        B --> C
     end
 
-    subgraph "Data Lake & Data Warehouse (Docker)"
-        B[(MinIO : Couche Bronze)]
-        S[(PostgreSQL : Couche Silver)]
-        G[(PostgreSQL : Couche Gold)]
+    subgraph SILVER["🥈 Silver — Nettoyage"]
+        D["Pandas<br/>Nettoyage et dédoublonnage"]
+        E[("PostgreSQL<br/>Données nettoyées")]
+        D --> E
     end
 
-    subgraph "Consommation"
-        BI[📊 Dashboards Power BI]
+    subgraph GOLD["🥇 Gold — Data Warehouse"]
+        F["dbt<br/>Transformations SQL"]
+        G[("dim_clients")]
+        H[("dim_produits")]
+        I[("fact_sales")]
+        J[("fact_stocks")]
+        F --> G
+        F --> H
+        F --> I
+        F --> J
     end
 
-    API -- "Ingestion (Python)" --> B
-    B -- "Nettoyage (Pandas)" --> S
-    S -- "Modélisation en Étoile (dbt)" --> G
-    G -- "Import Direct" --> BI
+    subgraph BI["📊 Business Intelligence"]
+        K["Power BI<br/>Dashboards interactifs"]
+    end
 
-    %% Orchestration
-    Airflow((Apache Airflow)) -. "Orchestre le pipeline" .-> B
-    Airflow -. "Orchestre le pipeline" .-> S
-    Airflow -. "Orchestre le pipeline" .-> G
+    A --> B
+    C --> D
+    E --> F
+    G --> K
+    H --> K
+    I --> K
+    J --> K
 
-    classDef storage fill:#f9f9f9,stroke:#333,stroke-width:2px;
-    class B,S,G storage;
-    ⚙️ Les Couches de l'Architecture (Medallion)
-Couche Bronze (Données Brutes) - MinIO
+    L["Apache Airflow<br/>Orchestration du pipeline"]
 
-Ingestion des données sources via des scripts Python.
+    L -.-> B
+    L -.-> D
+    L -.-> F
 
-Stockage local de type "Data Lake" orienté objet grâce à MinIO (compatible Amazon S3).
+    classDef bronze fill:#CD7F32,color:#fff,stroke:#8C5523
+    classDef silver fill:#A7B0B7,color:#111,stroke:#6C757D
+    classDef gold fill:#D4AF37,color:#111,stroke:#9A7B16
+    classDef bi fill:#F2C811,color:#111,stroke:#C6A500
 
-Couche Silver (Données Nettoyées) - PostgreSQL & Pandas
+    class B,C bronze
+    class D,E silver
+    class F,G,H,I,J gold
+    class K bi
+```
 
-Nettoyage, dédoublonnage et harmonisation des données avec Pandas.
+> **Remarque :** le diagramme décrit l'architecture logique du projet. Il ne représente pas une supervision en temps réel. L'orchestration effective dépend de la configuration du DAG Airflow.
 
-Chargement des données propres dans une base de données PostgreSQL.
+## ⚙️ Les couches de l'architecture Medallion
 
-Couche Gold (Modélisation Décisionnelle) - dbt (data build tool)
+### 🥉 Bronze — Ingestion des données
 
-Transformation des données Silver en un Modèle en Étoile (Star Schema) avec dbt.
+**Technologies :** Python, MinIO, Docker
 
-Génération automatisée des tables de Dimensions (dim_clients, dim_produits) et de Faits (fact_sales, fact_stocks).
+- Ingestion des données provenant de fichiers ou d'APIs.
+- Stockage des données brutes dans MinIO, un stockage objet compatible avec l'API Amazon S3.
+- Conservation d'une couche source distincte des données transformées.
 
-Implémentation de tests de qualité des données (unicité, intégrité référentielle, valeurs non nulles).
+### 🥈 Silver — Nettoyage et préparation
 
-Orchestration - Apache Airflow
+**Technologies :** Python, Pandas, PostgreSQL
 
-Automatisation du pipeline (Ingestion -> Traitement -> Modélisation -> Tests de qualité) via un DAG Airflow.
+- Nettoyage et harmonisation des données.
+- Gestion des valeurs manquantes et des doublons selon les règles définies.
+- Chargement des données préparées dans PostgreSQL.
+- Préparation des données pour les transformations analytiques.
 
-📂 Structure du Répertoire
-Plaintext
-📦 data-ecommerce
- ┣ 📂 dags/                   # DAGs Apache Airflow (ecommerce_pipeline.py)
- ┣ 📂 dbt_ecommerce/          # Projet dbt pour la couche Gold
- ┃ ┣ 📂 models/
- ┃ ┃ ┣ 📂 dimensions/         # Requêtes SQL : dim_clients, dim_produits
- ┃ ┃ ┣ 📂 facts/              # Requêtes SQL : fact_sales, fact_stocks
- ┃ ┃ ┣ sources.yml            # Déclaration des sources Silver
- ┃ ┃ ┗ schema.yml             # Tests de qualité de données (Quality Checks)
- ┃ ┣ dbt_project.yml          # Configuration principale du projet dbt
- ┃ ┗ profiles.yml             # Identifiants de connexion dbt -> PostgreSQL
- ┣ 📂 scripts/                # Scripts Python (ETL)
- ┃ ┣ ingestion_bronze.py      # Ingestion des données vers MinIO
- ┃ ┗ silver_layer.py          # Nettoyage et chargement dans PostgreSQL
- ┣ docker-compose.yml         # Infrastructure globale (MinIO, Postgres, Airflow)
- ┣ Dockerfile                 # Image personnalisée Airflow (avec Pandas et dbt)
- ┣ requirements.txt           # Dépendances Python
- ┗ README.md                  # Documentation du projet
-🚀 Guide de Déploiement Local
-1. Prérequis
-Docker Desktop
+### 🥇 Gold — Modélisation décisionnelle
 
-Git
+**Technologies :** dbt, SQL, PostgreSQL
 
-2. Déploiement de l'Infrastructure
-Clonez le dépôt et lancez les conteneurs :
+La couche Gold contient les tables destinées à l'analyse métier.
 
-Bash
-git clone [https://github.com/votre-nom-utilisateur/data-ecommerce.git](https://github.com/votre-nom-utilisateur/data-ecommerce.git)
+| Table | Type | Rôle |
+|---|---|---|
+| `dim_clients` | Dimension | Informations sur les clients |
+| `dim_produits` | Dimension | Informations sur les produits |
+| `fact_sales` | Faits | Analyse des ventes |
+| `fact_stocks` | Faits | Suivi des stocks |
+
+Le modèle en étoile facilite l'analyse des indicateurs par client, produit et période.
+
+Les tests dbt peuvent notamment vérifier l'unicité des identifiants, les valeurs non nulles et l'intégrité référentielle.
+
+### 🔄 Orchestration — Apache Airflow
+
+Apache Airflow permet d'organiser et de planifier les différentes étapes du pipeline à travers un DAG.
+
+Flux logique :
+
+`Ingestion → Nettoyage → Modélisation dbt → Tests de qualité`
+
+Les dépendances entre les tâches doivent garantir qu'une étape démarre après la réussite de ses prérequis.
+
+## 📊 Visualisation avec Power BI
+
+La couche Gold sert de source aux rapports Power BI pour analyser les ventes et les stocks.
+
+### Dashboard — Vue générale des ventes
+
+![Aperçu du dashboard Power BI](./images/dashboard.png)
+
+*Si aucune image n'apparaît, vérifiez que le fichier `images/dashboard.png` existe dans le dépôt GitHub.*
+
+Indicateurs prévus :
+
+- Chiffre d'affaires total.
+- Quantités vendues.
+- Nombre de commandes.
+- Panier moyen.
+- Évolution du chiffre d'affaires dans le temps.
+
+Les pages complémentaires peuvent présenter l'analyse des produits et le suivi des stocks.
+
+**Accès au rapport interactif :** [Ouvrir le dashboard Power BI](#power-bi-dashboard)
+
+Pour partager un rapport interactif, publiez-le sur un espace Power BI autorisé, puis remplacez le lien ci-dessus par l'URL réelle du rapport. Les autorisations de consultation restent applicables.
+
+## 📂 Structure du dépôt
+
+```text
+data-ecommerce/
+├── dags/
+│   └── ecommerce_pipeline.py
+├── dbt_ecommerce/
+│   ├── models/
+│   │   ├── dimensions/
+│   │   │   ├── dim_clients.sql
+│   │   │   └── dim_produits.sql
+│   │   ├── facts/
+│   │   │   ├── fact_sales.sql
+│   │   │   └── fact_stocks.sql
+│   │   ├── sources.yml
+│   │   └── schema.yml
+│   ├── dbt_project.yml
+│   └── profiles.yml
+├── scripts/
+│   ├── ingestion_bronze.py
+│   └── silver_layer.py
+├── images/
+│   └── dashboard.png
+├── docker-compose.yml
+├── Dockerfile
+├── requirements.txt
+└── README.md
+```
+
+*Cette arborescence est indicative : adaptez les noms aux fichiers réellement présents dans votre dépôt.*
+
+## 🚀 Installation et déploiement local
+
+### 1. Prérequis
+
+- Git
+- Docker Desktop
+- PowerShell sous Windows ou un terminal compatible
+
+### 2. Cloner le dépôt
+
+```bash
+git clone https://github.com/VOTRE-UTILISATEUR/data-ecommerce.git
 cd data-ecommerce
-docker-compose up -d --build
-MinIO (Console) : http://localhost:9001 (admin / password123)
+```
 
-PostgreSQL : Port 5444 (postgres / postgres)
+Remplacez `VOTRE-UTILISATEUR` par votre nom d'utilisateur GitHub et vérifiez que le dépôt existe.
 
-Apache Airflow : http://localhost:8080
+### 3. Démarrer l'infrastructure
 
-3. Lancer l'Orchestration (Airflow)
-Récupérez le mot de passe d'administration d'Airflow :
+```bash
+docker compose up -d --build
+```
 
-Bash
+Pour vérifier les conteneurs :
+
+```bash
+docker compose ps
+```
+
+Pour consulter les logs :
+
+```bash
+docker compose logs -f
+```
+
+### 4. Accéder aux services
+
+| Service | Adresse locale |
+|---|---|
+| MinIO Console | http://localhost:9001 |
+| Apache Airflow | http://localhost:8080 |
+| PostgreSQL | `localhost:5444` si ce port est configuré dans Docker Compose |
+
+Les identifiants dépendent de votre configuration locale. Consultez les variables d'environnement et le fichier `docker-compose.yml`.
+
+### 5. Exécuter le pipeline Airflow
+
+1. Ouvrez http://localhost:8080.
+2. Connectez-vous avec les identifiants configurés pour Airflow.
+3. Recherchez le DAG `pfe_ecommerce_medallion`, si c'est bien son nom dans votre code.
+4. Activez le DAG si nécessaire.
+5. Déclenchez une exécution et vérifiez l'état de chaque tâche.
+
+Si vous utilisez le mode standalone d'Airflow et que le fichier de mot de passe se trouve dans le répertoire courant du conteneur :
+
+```bash
 docker exec -it pfe_airflow cat standalone_admin_password.txt
-Ouvrez http://localhost:8080 et connectez-vous avec le compte admin.
+```
 
-Activez le DAG nommé pfe_ecommerce_medallion et cliquez sur Trigger DAG.
+Adaptez le nom du conteneur et le chemin si votre configuration est différente.
 
-📊 Visualisation (Power BI)
-(Ajoutez ici une image ou un GIF de votre tableau de bord final)
-![Aperçu du Dashboard](./images/dashboard.png)
-La couche Gold est structurée pour optimiser les performances de reporting :
+## 🧪 Qualité et fiabilité des données
 
-Tables de Faits : fact_sales (Transactions), fact_stocks (Inventaire).
+Les contrôles de qualité peuvent couvrir :
 
-Tables de Dimensions : dim_clients (Données clients), dim_produits (Catalogue).
+- Unicité des clés des dimensions.
+- Absence de valeurs nulles sur les colonnes obligatoires.
+- Intégrité référentielle entre les tables de faits et de dimensions.
+- Cohérence des types et des valeurs métier.
+- Validation des modèles après transformation.
 
-👨‍💻 Auteur
-Othmane Boushabi | Data Engineer
+Exemple de commande pour exécuter les tests dbt depuis le répertoire du projet dbt :
+
+```bash
+dbt test
+```
+
+Cette commande nécessite un environnement dbt correctement configuré et une connexion fonctionnelle à PostgreSQL.
+
+## 🔐 Bonnes pratiques
+
+- Ne versionnez pas les mots de passe, clés API ou secrets.
+- Utilisez un fichier `.env` local et ajoutez-le au `.gitignore`.
+- Fournissez un fichier `.env.example` sans valeurs secrètes.
+- Documentez les ports et les variables nécessaires au déploiement.
+- Vérifiez les tests et les logs après chaque exécution du pipeline.
+
+## 👨‍💻 Auteur
+
+**Othmane Boushabi**
+
+*Data Engineering · SQL · Python · Analytics*
+
